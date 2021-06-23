@@ -19,40 +19,40 @@ case class Address(p: Int)
 
 // Multiparty session classes
 case class MPOrder(a: Out[binary.Order]) {
-  def send(v: Order) = {
+  def send(v: Order): MPQuote = {
     val cnt = a !! binary.Order(v.p)_
     MPQuote(cnt)
   }
 }
 case class MPQuote(a: In[binary.Quote]) {
-  def receive(implicit timeout: Duration = Duration.Inf) = {
+  def receive(implicit timeout: Duration = Duration.Inf): Quote = {
     a.receive(timeout) match {
       case m @ binary.Quote(p) => Quote(p, MPAcceptOrRejectOrRetry(m.cont))
     }
   }
 }
 case class MPAcceptOrRejectOrRetry(a: Out[binary.AcceptOrRejectOrRetry]) {
-  def send(v: Accept) = {
+  def send(v: Accept): MPAddress = {
     val cnt = a !! binary.Accept(v.p)_
     MPAddress(cnt)
   }
-  def send(v: Reject) = {
-    val cnt = a ! binary.Reject(v.p)
+  def send(v: Reject): Unit = {
+    val cnt: Unit = a ! binary.Reject(v.p)
     ()
   }
-  def send(v: Retry) = {
+  def send(v: Retry): MPOrder = {
     val cnt = a !! binary.Retry(v.p)_
     MPOrder(cnt)
   }
 }
 case class MPAddress(a: Out[binary.Address]) {
-  def send(v: Address) = {
+  def send(v: Address): MPDate = {
     val cnt = a !! binary.Address(v.p)_
     MPDate(cnt)
   }
 }
 case class MPDate(a: In[binary.Date]) {
-  def receive(implicit timeout: Duration = Duration.Inf) = {
+  def receive(implicit timeout: Duration = Duration.Inf): Date = {
     a.receive(timeout) match {
       case m @ binary.Date(p) => Date(p)
     }

@@ -16,7 +16,7 @@ case class Ok(p: Unit)
 
 // Multiparty session classes
 case class MPCancelOrDetails2(Agency: In[binary.CancelOrDetails2], Customer: Out[binary.Ok]) {
-  def receive(implicit timeout: Duration = Duration.Inf) = {
+  def receive(implicit timeout: Duration = Duration.Inf): MsgMPCancelOrDetails2 = {
     Agency.receive(timeout) match {
       case m @ binary.Cancel(p) => Cancel(p, MPOk((), Customer))
       case m @ binary.Details2(p) => Details2(p, MPOk((), Customer))
@@ -24,8 +24,8 @@ case class MPCancelOrDetails2(Agency: In[binary.CancelOrDetails2], Customer: Out
   }
 }
 case class MPOk(Agency: Unit, Customer: Out[binary.Ok]) {
-  def send(v: Ok) = {
-    val cnt = Customer ! binary.Ok(v.p)
+  def send(v: Ok): Unit = {
+    val cnt: Unit = Customer ! binary.Ok(v.p)
     ()
   }
 }

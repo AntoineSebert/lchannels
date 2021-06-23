@@ -9,17 +9,17 @@ import scala.concurrent.duration.Duration
 
 class Agency(s: In[binary.Order])(implicit timeout: Duration)
   extends Runnable with StrictLogging {
-  private def logTrace(msg: String) = logger.trace(msg)
-  private def logDebug(msg: String) = logger.debug(msg)
-  private def logInfo(msg: String) = logger.info(msg)
-  private def logWarn(msg: String) = logger.warn(msg)
-  private def logError(msg: String) = logger.error(msg)
+  private def logTrace(msg: String): Unit = logger.trace(msg)
+  private def logDebug(msg: String): Unit = logger.debug(msg)
+  private def logInfo(msg: String): Unit = logger.info(msg)
+  private def logWarn(msg: String): Unit = logger.warn(msg)
+  private def logError(msg: String): Unit = logger.error(msg)
 
   // Own thread
   private val thread = { val t = new Thread(this); t.start(); t }
-  def join() = thread.join()
+  def join(): Unit = thread.join()
 
-  override def run() = {
+  override def run(): Unit = {
     val c = MPOrder(s) // Wrap the channel in a multiparty session obj
     handleOrder(c)
     logInfo("Terminating.")
@@ -42,7 +42,7 @@ class Agency(s: In[binary.Order])(implicit timeout: Duration)
 
     logInfo(f"Sending quote: $quote --- then waiting for answer...")
     order.cont.send(Quote(quote)).receive match {
-      case Accept((), cont) => {
+      case Accept((), cont) =>
         logInfo("Waiting for address...")
         val address = cont.receive
         logInfo(f"Received address: '${address.p}'")
@@ -50,7 +50,6 @@ class Agency(s: In[binary.Order])(implicit timeout: Duration)
         val date = scala.util.Random.nextInt.abs
         logInfo(f"Sending date: $date...")
         address.cont.send(Date(date))
-      }
       case Reject(()) => logInfo("Quote rejected")
       case Retry((), cont) => handleOrder(cont)
     }

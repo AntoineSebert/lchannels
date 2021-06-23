@@ -23,20 +23,20 @@ case class Date(p: Int)
 
 // Multiparty session classes
 case class MPOrder(Customer: In[binary.Order], Hotel: Out[binary.CancelOrDetails2]) {
-  def receive(implicit timeout: Duration = Duration.Inf) = {
+  def receive(implicit timeout: Duration = Duration.Inf): Order = {
     Customer.receive(timeout) match {
       case m @ binary.Order(p) => Order(p, MPQuote(m.cont, Hotel))
     }
   }
 }
 case class MPQuote(Customer: Out[binary.Quote], Hotel: Out[binary.CancelOrDetails2]) {
-  def send(v: Quote) = {
+  def send(v: Quote): MPAcceptOrReject = {
     val cnt = Customer !! binary.Quote(v.p)_
     MPAcceptOrReject(cnt, Hotel)
   }
 }
 case class MPAcceptOrReject(Customer: In[binary.AcceptOrReject], Hotel: Out[binary.CancelOrDetails2]) {
-  def receive(implicit timeout: Duration = Duration.Inf) = {
+  def receive(implicit timeout: Duration = Duration.Inf): MsgMPAcceptOrReject = {
     Customer.receive(timeout) match {
       case m @ binary.Accept(p) => Accept(p, MPDetails1(m.cont, Hotel))
       case m @ binary.Reject(p) => Reject(p, MPCancel((), Hotel))
@@ -44,34 +44,34 @@ case class MPAcceptOrReject(Customer: In[binary.AcceptOrReject], Hotel: Out[bina
   }
 }
 case class MPDetails1(Customer: In[binary.Details1], Hotel: Out[binary.CancelOrDetails2]) {
-  def receive(implicit timeout: Duration = Duration.Inf) = {
+  def receive(implicit timeout: Duration = Duration.Inf): Details1 = {
     Customer.receive(timeout) match {
       case m @ binary.Details1(p) => Details1(p, MPDetails2(m.cont, Hotel))
     }
   }
 }
 case class MPDetails2(Customer: In[binary.Address], Hotel: Out[binary.CancelOrDetails2]) {
-  def send(v: Details2) = {
-    val cnt = Hotel ! binary.Details2(v.p)
+  def send(v: Details2): MPAddress = {
+    val cnt: Unit = Hotel ! binary.Details2(v.p)
     MPAddress(Customer, cnt)
   }
 }
 case class MPAddress(Customer: In[binary.Address], Hotel: Unit) {
-  def receive(implicit timeout: Duration = Duration.Inf) = {
+  def receive(implicit timeout: Duration = Duration.Inf): Address = {
     Customer.receive(timeout) match {
       case m @ binary.Address(p) => Address(p, MPDate(m.cont, Hotel))
     }
   }
 }
 case class MPDate(Customer: Out[binary.Date], Hotel: Unit) {
-  def send(v: Date) = {
-    val cnt = Customer ! binary.Date(v.p)
+  def send(v: Date): Unit = {
+    val cnt: Unit = Customer ! binary.Date(v.p)
     ()
   }
 }
 case class MPCancel(Customer: Unit, Hotel: Out[binary.CancelOrDetails2]) {
-  def send(v: Cancel) = {
-    val cnt = Hotel ! binary.Cancel(v.p)
+  def send(v: Cancel): Unit = {
+    val cnt: Unit = Hotel ! binary.Cancel(v.p)
     ()
   }
 }

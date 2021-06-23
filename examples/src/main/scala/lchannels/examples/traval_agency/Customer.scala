@@ -9,17 +9,17 @@ import scala.concurrent.duration.Duration
 
 class Customer(s: Out[binary.Order])(implicit timeout: Duration)
   extends Runnable with StrictLogging {
-  private def logTrace(msg: String) = logger.trace(msg)
-  private def logDebug(msg: String) = logger.debug(msg)
-  private def logInfo(msg: String) = logger.info(msg)
-  private def logWarn(msg: String) = logger.warn(msg)
-  private def logError(msg: String) = logger.error(msg)
+  private def logTrace(msg: String): Unit = logger.trace(msg)
+  private def logDebug(msg: String): Unit = logger.debug(msg)
+  private def logInfo(msg: String): Unit = logger.info(msg)
+  private def logWarn(msg: String): Unit = logger.warn(msg)
+  private def logError(msg: String): Unit = logger.error(msg)
 
   // Own thread
   private val thread = { val t = new Thread(this); t.start(); t }
-  def join() = thread.join()
+  def join(): Unit = thread.join()
 
-  override def run() = {
+  override def run(): Unit = {
     val c = MPOrder(s) // Wrap the channel in a multiparty session obj
     order(c)
 
@@ -47,22 +47,19 @@ class Customer(s: Out[binary.Order])(implicit timeout: Duration)
       3 -> "Retry",
     )
     acceptOrRejectOrRetry(answerChoices) match {
-      case "Accept" => {
+      case "Accept" =>
         logInfo("Quote accepted")
         val address = scala.util.Random.nextInt.abs
 
         logInfo(f"Sending address: '$address' --- and waiting for date...")
         val date = quote.cont.send(Accept()).send(Address(address)).receive
         logInfo(f"Got date: ${date.p}")
-      }
-      case "Reject" => {
+      case "Reject" =>
         logInfo("Quote rejected")
         quote.cont.send(Reject())
-      }
-      case "Retry" => {
+      case "Retry" =>
         logInfo("retry")
         order(quote.cont.send(Retry()))
-      }
     }
   }
 

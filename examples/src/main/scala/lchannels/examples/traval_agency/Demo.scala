@@ -7,15 +7,15 @@ import lchannels.examples.travel_agency.customer.Customer
 
 object Local extends App {
   // Helper method to ease external invocation
-  def run() = main(Array())
+  def run(): Unit = main(Array())
 
   Demo.start()
 }
 
 object Demo {
-  def start() = {
+  def start(): Unit = {
     import scala.concurrent.duration._
-    implicit val timeout = 60.seconds
+    implicit val timeout: FiniteDuration = 60.seconds
 
     val (ca, sa) = LocalChannel.factory[Order]()
 

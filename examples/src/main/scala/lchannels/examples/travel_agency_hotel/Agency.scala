@@ -9,17 +9,17 @@ import scala.concurrent.duration.Duration
 
 class Agency(c: In[binary.Order], h: Out[binary.CancelOrDetails2])(implicit timeout: Duration)
   extends Runnable with StrictLogging {
-  private def logTrace(msg: String) = logger.trace(msg)
-  private def logDebug(msg: String) = logger.debug(msg)
-  private def logInfo(msg: String) = logger.info(msg)
-  private def logWarn(msg: String) = logger.warn(msg)
-  private def logError(msg: String) = logger.error(msg)
+  private def logTrace(msg: String): Unit = logger.trace(msg)
+  private def logDebug(msg: String): Unit = logger.debug(msg)
+  private def logInfo(msg: String): Unit = logger.info(msg)
+  private def logWarn(msg: String): Unit = logger.warn(msg)
+  private def logError(msg: String): Unit = logger.error(msg)
 
   // Own thread
   private val thread = { val t = new Thread(this); t.start(); t }
-  def join() = thread.join()
+  def join(): Unit = thread.join()
 
-  override def run() = {
+  override def run(): Unit = {
     val o = MPOrder(c, h) // Wrap the channel in a multiparty session obj
     handleOrder(o)
     logInfo("Terminating.")
@@ -41,7 +41,7 @@ class Agency(c: In[binary.Order], h: Out[binary.CancelOrDetails2])(implicit time
 
     logInfo(f"Sending quote: $quote --- then waiting for answer...")
     order.cont.send(Quote(quote)).receive match {
-      case Accept((), cont) => {
+      case Accept((), cont) =>
         logInfo("Waiting for details...")
         val details = cont.receive
         logInfo(f"Received details: '${details.p}'")
@@ -51,13 +51,11 @@ class Agency(c: In[binary.Order], h: Out[binary.CancelOrDetails2])(implicit time
         logInfo(f"Received address: '${address.p}'")
 
         val date = scala.util.Random.nextInt.abs
-        logInfo(f"Sending date: $date...")
+        logInfo(f"Sending date: '$date'...")
         address.cont.send(Date(date))
-      }
-      case Reject((), cont) => {
+      case Reject((), cont) =>
         logInfo("Quote rejected --- cancelling...")
         cont.send(Cancel())
-      }
     }
   }
 }

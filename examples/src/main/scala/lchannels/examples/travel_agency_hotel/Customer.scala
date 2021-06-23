@@ -9,17 +9,17 @@ import scala.concurrent.duration.Duration
 
 class Customer(a: Out[binary.Order], h: In[binary.Ok])(implicit timeout: Duration)
   extends Runnable with StrictLogging {
-  private def logTrace(msg: String) = logger.trace(msg)
-  private def logDebug(msg: String) = logger.debug(msg)
-  private def logInfo(msg: String) = logger.info(msg)
-  private def logWarn(msg: String) = logger.warn(msg)
-  private def logError(msg: String) = logger.error(msg)
+  private def logTrace(msg: String): Unit = logger.trace(msg)
+  private def logDebug(msg: String): Unit = logger.debug(msg)
+  private def logInfo(msg: String): Unit = logger.info(msg)
+  private def logWarn(msg: String): Unit = logger.warn(msg)
+  private def logError(msg: String): Unit = logger.error(msg)
 
   // Own thread
   private val thread = { val t = new Thread(this); t.start(); t }
-  def join() = thread.join()
+  def join(): Unit = thread.join()
 
-  override def run() = {
+  override def run(): Unit = {
     val c = MPOrder(a, h) // Wrap the channel in a multiparty session obj
     order(c)
 
@@ -45,7 +45,7 @@ class Customer(a: Out[binary.Order], h: In[binary.Ok])(implicit timeout: Duratio
       2 -> "Reject",
     )
     acceptOrReject(answerChoices) match {
-      case "Accept" => {
+      case "Accept" =>
         val cont = quote.cont.send(Accept())
         logInfo("Quote accepted")
 
@@ -54,16 +54,12 @@ class Customer(a: Out[binary.Order], h: In[binary.Ok])(implicit timeout: Duratio
         logInfo(s"Sending details: '$details'; Sending address: '$address' --- and waiting for date...")
 
         val date = cont.send(Details1(details)).send(Address(address)).receive
-        logInfo(f"Got date: ${date.p}")
+        logInfo(f"Got date: '${date.p}'")
 
         date.cont.receive
-      }
-      case "Reject" => {
-        val cont = quote.cont.send(Reject())
+      case "Reject" =>
+        quote.cont.send(Reject()).receive
         logInfo("Quote rejected")
-
-        cont.receive
-      }
     }
 
     logInfo("Received 'Ok' from Hotel")
